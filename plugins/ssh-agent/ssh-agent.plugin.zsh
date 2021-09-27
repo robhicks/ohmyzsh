@@ -23,12 +23,12 @@ function _start_agent() {
 }
 
 function _add_identities() {
-  local id line sig lines
+  local id file line sig lines
   local -a identities loaded_sigs loaded_ids not_loaded
   zstyle -a :omz:plugins:ssh-agent identities identities
 
   # check for .ssh folder presence
-  if [[ ! -d $HOME/.ssh ]]; then
+  if [[ ! -d "$HOME/.ssh" ]]; then
     return
   fi
 
@@ -52,10 +52,12 @@ function _add_identities() {
 
   # add identities if not already loaded
   for id in $identities; do
+    # if id is an absolute path, make file equal to id
+    [[ "$id" = /* ]] && file="$id" || file="$HOME/.ssh/$id"
     # check for filename match, otherwise try for signature match
-    if [[ ${loaded_ids[(I)$HOME/.ssh/$id]} -le 0 ]]; then
-      sig="$(ssh-keygen -lf "$HOME/.ssh/$id" | awk '{print $2}')"
-      [[ ${loaded_sigs[(I)$sig]} -le 0 ]] && not_loaded+=("$HOME/.ssh/$id")
+    if [[ ${loaded_ids[(I)$file]} -le 0 ]]; then
+      sig="$(ssh-keygen -lf "$file" | awk '{print $2}')"
+      [[ ${loaded_sigs[(I)$sig]} -le 0 ]] && not_loaded+=("$file")
     fi
   done
 
@@ -94,24 +96,7 @@ else
   _start_agent
 fi
 
-() {
-  emulate -L zsh
-
-  command mkdir "$ZSH_CACHE_DIR/ssh-agent.lock" 2>/dev/null || return
-
-  trap "
-    ret=\$?
-
-    command rm -rf '$ZSH_CACHE_DIR/ssh-agent.lock'
-    unset agent_forwarding ssh_env_cache
-    unfunction _start_agent _add_identities 2>/dev/null
-
-    return \$ret
-  " EXIT INT QUIT
-
-  _add_identities
-
-}
+_add_identities
 
 unset agent_forwarding ssh_env_cache
 unfunction _start_agent _add_identities
