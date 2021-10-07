@@ -97,6 +97,13 @@ alias gcas='git commit -a -s'
 alias gcasm='git commit -a -s -m'
 alias gcb='git checkout -b'
 alias gcf='git config --list'
+
+function gccd() {
+  command git clone --recurse-submodules "$@"
+  [[ -d "$_" ]] && cd "$_" || cd "${${_:h}%.git}"
+}
+compdef _git gccd=git-clone
+
 alias gcl='git clone --recurse-submodules'
 alias gclean='git clean -id'
 alias gpristine='git reset --hard && git clean -dffx'
@@ -119,7 +126,7 @@ alias gdcw='git diff --cached --word-diff'
 alias gdct='git describe --tags $(git rev-list --tags --max-count=1)'
 alias gds='git diff --staged'
 alias gdt='git diff-tree --no-commit-id --name-only -r'
-alias gdu='git diff @{u}'
+alias gdup='git diff @{upstream}'
 alias gdw='git diff --word-diff'
 
 function gdnolock() {
